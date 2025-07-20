@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Companion</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display.swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #f2e8e3; --bg-secondary: #ffffff; --bg-card: #ffffff;
+            --text-primary: #4a4e68; --text-secondary: #6c7093; --text-accent: #6c7093;
+            --border-color: #c9ada6; --shadow-color: rgba(74, 78, 104, 0.25);
+            --accent-primary: #6c7093; --accent-secondary: #9a8d98;
+            --accent-light: #e3d9d7;
+        }
+        .dark {
+            --bg-primary: #4a4e68; --bg-secondary: #6c7093; --bg-card: #6c7093;
+            --text-primary: #f2e8e3; --text-secondary: #c9ada6; --text-accent: #f2e8e3;
+            --border-color: #9a8d98; --shadow-color: rgba(0, 0, 0, 0.75);
+            --accent-primary: #f2e8e3; --accent-secondary: #c9ada6;
+            --accent-light: #9a8d98;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
+        .page { display: none; }
+        .page.active { display: block; animation: slideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes subtle-glow {
+            0%, 100% { box-shadow: 0 0 8px 0px var(--accent-secondary); border-color: var(--accent-primary); }
+            50% { box-shadow: 0 0 20px 2px var(--accent-secondary); border-color: var(--text-accent); }
+        }
+        .ai-card-glow {
+            animation: subtle-glow 4s infinite ease-in-out;
+            border: 1px solid var(--accent-primary);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--text-secondary); border-radius: 10px; }
+        .aspect-video-container { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; }
+        .aspect-video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 50; animation: fadeIn 0.3s; }
+        .modal-content { background: var(--bg-card); padding: 1.5rem; border-radius: 0.75rem; max-width: 95%; width: 700px; box-shadow: 0 20px 25px -5px var(--shadow-color); animation: zoomIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .auth-card { background: var(--bg-card); padding: 2.5rem; border-radius: 1.25rem; box-shadow: 0 25px 50px -12px var(--shadow-color); animation: slideInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .animate-stagger { opacity: 0; animation: slideInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .chat-bubble { max-width: 80%; padding: 0.75rem 1rem; border-radius: 1rem; }
+        .chat-ai { background-color: var(--bg-secondary); border-bottom-left-radius: 0.25rem; }
+        .chat-user { background-color: var(--accent-primary); color: var(--bg-primary); border-bottom-right-radius: 0.25rem; align-self: flex-end; }
+        .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--text-accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom Theme Classes */
+        .bg-primary { background-color: var(--bg-primary); }
+        .bg-secondary { background-color: var(--bg-secondary); }
+        .bg-card { background-color: var(--bg-card); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-accent { color: var(--text-accent); }
+        .border-theme { border-color: var(--border-color); }
+        .btn-primary { background-color: var(--accent-primary); color: var(--bg-primary); }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-secondary { background-color: var(--accent-light); color: var(--accent-primary); }
+        .btn-secondary:hover { opacity: 0.9; }
+        .link-accent { color: var(--accent-primary); }
+        .link-accent:hover { text-decoration: underline; }
+        .progress-bar-fill { background-color: var(--accent-primary); }
+        .tag-skill { background-color: var(--accent-light); color: var(--accent-primary); }
+
+        /* Chatbot Styles */
+        #chatbot-fab { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; width: 4rem; height: 4rem; border-radius: 9999px; box-shadow: 0 10px 15px -3px var(--shadow-color); transition: transform 0.3s; }
+        #chatbot-fab:hover { transform: scale(1.1); }
+        #chatbot-container { position: fixed; bottom: 7rem; right: 2rem; width: 90%; max-width: 400px; height: 500px; z-index: 100; border-radius: 1rem; box-shadow: 0 25px 50px -12px var(--shadow-color); transform: translateY(20px) scale(0.95); opacity: 0; transition: transform 0.3s, opacity 0.3s; pointer-events: none; }
+        #chatbot-container.active { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+        
+        /* Themed Badge Styles */
+        .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .badge-acquired { background-color: var(--accent-light); color: var(--text-primary); }
+        .badge-gap { background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .skill-name-gap { color: var(--text-secondary); }
+
+        /* Password Strength Styles */
+        .rule-valid { color: #10B981; }
+        .dark .rule-valid { color: #34D399; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="app-container" class="min-h-screen">
+
+        <!-- PAGE 0: LANDING / LOGIN / SIGNUP -->
+        <div id="auth-page" class="page active">
+            <div class="min-h-screen flex flex-col items-center justify-center bg-primary p-4 relative">
+                <div class="absolute top-4 right-4 flex items-center gap-2">
+                    <button id="auth-watch-demo-button" class="p-2 rounded-full hover:bg-[--accent-light] transition-colors" title="Watch Demo">
+                       <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                    <button id="auth-theme-toggle-button" class="p-2 rounded-full hover:bg-[--accent-light] transition-colors" title="Toggle Theme"></button>
+                </div>
+                <div class="w-full max-w-md">
+                    <div id="login-container">
+                        <div class="auth-card">
+                            <h1 class="text-3xl font-extrabold text-center mb-2 text-primary">Career Companion</h1>
+                            <p class="text-center text-secondary mb-8">Sign in to continue your journey.</p>
+                            <div id="login-message" class="hidden text-center text-sm p-3 mb-4 rounded-lg"></div>
+                            <form id="login-form">
+                                <div class="mb-4"><label for="login-email" class="block mb-2 text-sm font-medium text-secondary">Email</label><input type="email" id="login-email" class="bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" required></div>
+                                <div class="mb-6"><label for="login-password" class="block mb-2 text-sm font-medium text-secondary">Password</label><input type="password" id="login-password" class="bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" required></div>
+                                <button type="submit" class="w-full btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center transition-all duration-300 transform hover:scale-105">Login</button>
+                            </form>
+                            <p class="text-center text-sm text-secondary mt-6">Don't have an account? <button id="show-signup-btn" class="font-medium link-accent">Sign Up</button></p>
+                        </div>
+                    </div>
+                    <div id="signup-container" class="hidden">
+                         <div class="auth-card">
+                            <h1 class="text-3xl font-extrabold text-center mb-2 text-primary">Create Your Account</h1>
+                            <p class="text-center text-secondary mb-8">Start your personalized career journey today.</p>
+                            <div id="signup-message" class="hidden text-center text-sm p-3 mb-4 rounded-lg"></div>
+                            <form id="signup-form">
+                                <div class="mb-4"><label for="signup-email" class="block mb-2 text-sm font-medium text-secondary">Email</label><input type="email" id="signup-email" class="bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" required></div>
+                                <div class="mb-4"><label for="signup-password" class="block mb-2 text-sm font-medium text-secondary">Password</label><input type="password" id="signup-password" class="bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" required></div>
+                                <div id="password-rules" class="mb-6 text-sm space-y-1">
+                                    <p id="rule-length" class="text-secondary transition-colors flex items-center"><span class="rule-icon mr-2"></span>Minimum 8 characters</p>
+                                    <p id="rule-uppercase" class="text-secondary transition-colors flex items-center"><span class="rule-icon mr-2"></span>At least one uppercase letter</p>
+                                    <p id="rule-lowercase" class="text-secondary transition-colors flex items-center"><span class="rule-icon mr-2"></span>At least one lowercase letter</p>
+                                    <p id="rule-number" class="text-secondary transition-colors flex items-center"><span class="rule-icon mr-2"></span>At least one number</p>
+                                    <p id="rule-special" class="text-secondary transition-colors flex items-center"><span class="rule-icon mr-2"></span>At least one special character</p>
+                                </div>
+                                <button type="submit" id="signup-submit-btn" class="w-full btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Create Account</button>
+                            </form>
+                            <p class="text-center text-sm text-secondary mt-6">Already have an account? <button id="show-login-btn" class="font-medium link-accent">Login</button></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 1: ONBOARDING -->
+        <div id="onboarding-page" class="page">
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="max-w-2xl w-full mx-auto bg-card p-8 rounded-xl shadow-lg">
+                    <h1 class="text-3xl font-bold text-center mb-2 text-primary">One Last Step...</h1>
+                    <p class="text-center text-secondary mb-8">Help us personalize your roadmap.</p>
+                    <form id="onboarding-form">
+                        <div class="mb-6"><label for="name" class="block mb-2 text-sm font-medium text-secondary">What's your name?</label><input type="text" id="name" class="bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" placeholder="e.g., Alex Doe" required></div>
+                        <div class="mb-6"><label class="block mb-2 text-sm font-medium text-secondary">What are your interests?</label><div id="interests-container" class="flex flex-wrap gap-3"></div></div>
+                        <div class="mb-8"><label for="skills-input" class="block mb-2 text-sm font-medium text-secondary">What are your current skills?</label><div class="flex gap-2"><input type="text" id="skills-input" class="bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" placeholder="Type a skill and press Enter"></div><div id="skills-tags-container" class="mt-3 flex flex-wrap gap-2"></div></div>
+                        <button type="submit" class="w-full btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center">Build My Dashboard</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: DASHBOARD & MAIN CONTENT -->
+        <div id="main-content-page" class="page">
+            <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+                <header class="flex flex-wrap gap-4 justify-between items-center mb-8 pb-4 border-b border-theme">
+                    <div><h1 id="welcome-message" class="text-3xl font-bold text-primary"></h1><p class="text-secondary">Here are your recommended career paths based on your profile.</p></div>
+                    <div class="flex items-center gap-2 sm:gap-4">
+                        <button id="watch-demo-button" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Watch Demo">
+                           <svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                        <button id="market-trends-button" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Market Trends"><svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></button>
+                        <button id="theme-toggle-button" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Toggle Theme"></button>
+                        <button id="profile-button" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="My Profile"><svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></button>
+                        <button id="logout-button" class="bg-[--accent-secondary] text-white dark:bg-slate-700 dark:text-primary dark:hover:bg-slate-600 hover:opacity-90 font-medium py-2 px-4 rounded-lg text-sm">Logout</button>
+                    </div>
+                </header>
+                <main id="dashboard-container"></main>
+                <div id="roadmap-container" class="hidden"></div>
+                <div id="lesson-container" class="hidden"></div>
+                <div id="trends-container" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODALS -->
+    <div id="project-guide-modal" class="modal-backdrop"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 id="modal-title" class="text-xl font-bold"></h3><button id="modal-close-btn" class="text-secondary hover:text-primary text-3xl leading-none">&times;</button></div><div id="modal-body"></div></div></div>
+    <div id="profile-modal" class="modal-backdrop"><div class="modal-content" style="width: 500px;"><div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold">Edit Your Profile</h3><button id="profile-modal-close-btn" class="text-secondary hover:text-primary text-3xl leading-none">&times;</button></div><form id="profile-edit-form" class="space-y-4"><div><label class="text-sm font-medium text-secondary">Name</label><input type="text" id="profile-edit-name" class="mt-1 bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" required></div><div><label class="text-sm font-medium text-secondary">Interests</label><div id="profile-edit-interests" class="flex flex-wrap gap-2 mt-1 p-2 bg-secondary rounded-lg"></div></div><div><label class="text-sm font-medium text-secondary">Acquired Skills</label><div id="profile-edit-skills" class="flex flex-wrap gap-2 mt-1"></div><input type="text" id="profile-add-skill-input" class="mt-2 bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" placeholder="Add a new skill and press Enter"></div><div id="achievements-section" class="pt-2"></div><div class="pt-4"><button type="submit" class="w-full btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center">Save Changes</button></div></form></div></div>
+    <div id="interview-modal" class="modal-backdrop"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 id="interview-modal-title" class="text-xl font-bold">AI Mock Interview</h3><button id="interview-modal-close-btn" class="text-secondary hover:text-primary text-3xl leading-none">&times;</button></div><div id="interview-modal-body" class="h-96 flex flex-col"><div id="interview-chat-box" class="flex-grow overflow-y-auto p-4 bg-secondary rounded-lg space-y-4 flex flex-col"></div><div class="mt-4 flex gap-2"><input type="text" id="interview-input" class="flex-grow bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" placeholder="Type your answer..."><button id="interview-send-btn" class="btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center">Send</button></div></div></div></div>
+    <div id="demo-video-modal" class="modal-backdrop"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">App Demo</h3><button id="demo-modal-close-btn" class="text-secondary hover:text-primary text-3xl leading-none">&times;</button></div><div id="demo-modal-body"></div></div></div>
+
+    <!-- CHATBOT -->
+    <button id="chatbot-fab" class="btn-primary flex items-center justify-center shadow-lg w-16 h-16 rounded-full transition-transform hover:scale-110">
+        <img src="assets/chatbot-avatar.png" alt="Chatbot" class="w-8 h-8 rounded-full" id="fab-chat-icon">
+        <svg id="fab-close-icon" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+</button>
+
+    <div id="chatbot-container" class="bg-card flex flex-col">
+        <header class="p-4 border-b border-theme">
+            <h3 class="font-bold text-primary">AI Assistant</h3>
+            <p class="text-sm text-secondary">How can I help you today?</p>
+        </header>
+        <div id="chatbot-messages" class="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col"></div>
+        <div class="p-4 border-t border-theme">
+            <div class="flex gap-2">
+                <input type="text" id="chatbot-input" class="flex-grow bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" placeholder="Ask a question...">
+                <button id="chatbot-send-btn" class="btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DATABASE FUNCTIONS (Re-integrated) ---
+            function getUsers() { return JSON.parse(localStorage.getItem('careerCompanionUsers')) || []; }
+            function saveUsers(users) { localStorage.setItem('careerCompanionUsers', JSON.stringify(users)); }
+            function getLoggedInUser() { return JSON.parse(localStorage.getItem('loggedInUser')); }
+            function setLoggedInUser(user) { localStorage.setItem('loggedInUser', JSON.stringify(user)); }
+            function logoutUser() { localStorage.removeItem('loggedInUser'); }
+
+            const db = {
+                interests: ["Web Development", "Data Science", "Cloud Computing", "UI/UX Design", "Mobile Development", "Cybersecurity", "AI / Machine Learning"],
+                careerPaths: {
+                    "frontend-developer": {
+                        pathName: "Frontend Developer",
+                        description: "Builds the visual parts of websites that users interact with.",
+                        associatedInterests: ["Web Development"],
+                        requiredSkills: ["HTML", "CSS", "JavaScript", "React", "Git"],
+                        suggestedProjects: [
+                            { title: "Personal Portfolio Website", difficulty: "Beginner", videoUrl: "https://www.youtube.com/embed/hdI2bqOjy3c", hints: ["Structure: Plan sections like Home, About, Projects, Contact.", "Styling: Use CSS Flexbox or Grid for layout.", "Interactivity: Add smooth scrolling and a simple hover effect."] },
+                            { title: "Interactive Weather App", difficulty: "Intermediate", videoUrl: "https://www.youtube.com/embed/SeM-m93zt-o", hints: ["API: Use a free weather API like OpenWeatherMap.", "State Management: Use React state (`useState`) to store weather data.", "UI: Create components for the search bar and weather display."] },
+                            { title: "E-commerce Product Page", difficulty: "Advanced", videoUrl: "https://www.youtube.com/embed/tS_4mBq_i8s", hints: ["Component Architecture: Break the page into small components.", "State Management: Use React Context or Redux for managing the shopping cart.", "Performance: Optimize image loading and use memoization."] }
+                        ],
+                        resources: [
+                            { id: 'res-html', title: "HTML Full Course", learnsSkill: "HTML", embedUrl: "https://www.youtube.com/embed/kUMe1FH4CHE" },
+                            { id: 'res-css', title: "CSS Full Course", learnsSkill: "CSS", embedUrl: "https://www.youtube.com/embed/OXGznpKZ_sA" },
+                            { id: 'res-js', title: "JavaScript Full Course", learnsSkill: "JavaScript", embedUrl: "https://www.youtube.com/embed/PkZNo7MFNFg" },
+                            { id: 'res-react', title: "React Full Course", learnsSkill: "React", embedUrl: "https://www.youtube.com/embed/bMknfKXIFA8" },
+                            { id: 'res-git', title: "Git and GitHub for Beginners", learnsSkill: "Git", embedUrl: "https://www.youtube.com/embed/RGOj5yH7evk" }
+                        ],
+                        companyStacks: [
+                            { name: "Netflix", stack: ["React", "TypeScript", "GraphQL"] },
+                            { name: "Airbnb", stack: ["React", "Next.js", "Styled Components"] },
+                            { name: "Shopify", stack: ["React", "Ruby on Rails", "GraphQL"] }
+                        ],
+                        marketTrends: {
+                            topSkills: [ {name: "React", demand: 95}, {name: "TypeScript", demand: 85}, {name: "Next.js", demand: 70}, {name: "Tailwind CSS", demand: 65}, {name: "GraphQL", demand: 50} ],
+                            topCompanies: ["Google", "Meta", "Amazon", "Microsoft", "Shopify"]
+                        }
+                    },
+                    "data-scientist": {
+                        pathName: "Data Scientist",
+                        description: "Uses data to solve complex problems and build predictive models.",
+                        associatedInterests: ["Data Science", "AI / Machine Learning"],
+                        requiredSkills: ["Python", "SQL", "Pandas", "Data Visualization", "Statistics"],
+                        suggestedProjects: [
+                            { title: "Explore a Public Dataset", difficulty: "Beginner", videoUrl: "https://www.youtube.com/embed/gtjxAH8uaP0", hints: ["Data Source: Find a simple CSV dataset on Kaggle.", "Analysis: Use Pandas to load the data and calculate basic statistics.", "Visualization: Create simple bar charts or histograms."] },
+                            { title: "Movie Recommendation Engine", difficulty: "Intermediate", videoUrl: "https://www.youtube.com/embed/1xtrIEwY_zY", hints: ["Algorithm: Start with content-based filtering.", "Data: Use the MovieLens dataset.", "Implementation: Use Pandas and Scikit-learn's `TfidfVectorizer`."] },
+                            { title: "Real-time Stock Price Analysis", difficulty: "Advanced", videoUrl: "https://www.youtube.com/embed/2BrpKPk2V3s", hints: ["Data Streaming: Use an API like yfinance to fetch stock data.", "Time Series Analysis: Use libraries like `statsmodels` or `Prophet`.", "Dashboard: Create an interactive dashboard with Plotly Dash or Streamlit."] }
+                        ],
+                        resources: [
+                            { id: 'res-python', title: "Python for Everybody", learnsSkill: "Python", embedUrl: "https://www.youtube.com/embed/8DvywoWv6fI" },
+                            { id: 'res-sql', title: "SQL for Data Science", learnsSkill: "SQL", embedUrl: "https://www.youtube.com/embed/7S_tz1z_5bA" },
+                            { id: 'res-pandas', title: "Pandas Full Course", learnsSkill: "Pandas", embedUrl: "https://www.youtube.com/embed/vmE7vpm6rdY" },
+                            { id: 'res-dataviz', title: "Data Visualization with Matplotlib", learnsSkill: "Data Visualization", embedUrl: "https://www.youtube.com/embed/a9UrKTVEeZA" },
+                            { id: 'res-stats', title: "Statistics for Data Science", learnsSkill: "Statistics", embedUrl: "https://www.youtube.com/embed/xxpc-HPKN28" }
+                        ],
+                        companyStacks: [
+                            { name: "Google", stack: ["Python", "TensorFlow", "BigQuery"] },
+                            { name: "Netflix", stack: ["Python", "Spark", "Tableau"] },
+                            { name: "Spotify", stack: ["Python", "SQL", "Scikit-learn"] }
+                        ],
+                        marketTrends: {
+                            topSkills: [ {name: "Python", demand: 98}, {name: "SQL", demand: 92}, {name: "TensorFlow/PyTorch", demand: 80}, {name: "Spark", demand: 65}, {name: "Tableau", demand: 60} ],
+                            topCompanies: ["Meta", "Apple", "Netflix", "Google", "Amazon"]
+                        }
+                    },
+                    "cloud-engineer": {
+                        pathName: "Cloud Engineer",
+                        description: "Manages and deploys applications on cloud infrastructure like AWS, GCP, or Azure.",
+                        associatedInterests: ["Cloud Computing"],
+                        requiredSkills: ["Linux", "Networking", "AWS", "Docker", "Kubernetes", "Terraform"],
+                        suggestedProjects: [
+                            { title: "Deploy a Static Website to AWS S3", difficulty: "Beginner", videoUrl: "https://www.youtube.com/embed/uejoL-D_v3A", hints: ["AWS Account: Create a free tier AWS account.", "S3 Bucket: Create an S3 bucket and configure it for static website hosting.", "Upload: Upload your HTML/CSS files and make the bucket public."] },
+                            { title: "Containerize a Web App with Docker", difficulty: "Intermediate", videoUrl: "https://www.youtube.com/embed/3c-iBn73dDE", hints: ["Dockerfile: Write a Dockerfile for a simple Node.js or Python web app.", "Build & Run: Build the Docker image and run it locally.", "Push to Hub: Push your image to Docker Hub."] },
+                            { title: "CI/CD Pipeline to Kubernetes", difficulty: "Advanced", videoUrl: "https://www.youtube.com/embed/BHQihkUw_2A", hints: ["Kubernetes Cluster: Set up a managed Kubernetes cluster (EKS, GKE, or AKS).", "GitHub Actions: Create a workflow that builds your Docker image on push.", "Deployment: The workflow should then deploy this new image to your Kubernetes cluster."] }
+                        ],
+                        resources: [
+                            { id: 'res-linux', title: "Linux for Beginners", learnsSkill: "Linux", embedUrl: "https://www.youtube.com/embed/sWbUDq4S6Y8" },
+                            { id: 'res-networking', title: "Networking Fundamentals", learnsSkill: "Networking", embedUrl: "https://www.youtube.com/embed/3QhU9jd03a0" },
+                            { id: 'res-aws', title: "AWS Certified Cloud Practitioner", learnsSkill: "AWS", embedUrl: "https://www.youtube.com/embed/SOTamWNgDKc" },
+                            { id: 'res-docker', title: "Docker Full Course", learnsSkill: "Docker", embedUrl: "https://www.youtube.com/embed/3c-iBn73dDE" },
+                            { id: 'res-k8s', title: "Kubernetes Full Course", learnsSkill: "Kubernetes", embedUrl: "https://www.youtube.com/embed/d6WC5n9G_sA" },
+                            { id: 'res-terraform', title: "Terraform Full Course", learnsSkill: "Terraform", embedUrl: "https://www.youtube.com/embed/7xngnjfIlK4" }
+                        ],
+                        companyStacks: [
+                            { name: "Amazon Web Services", stack: ["AWS", "Linux", "Python"] },
+                            { name: "Google Cloud", stack: ["GCP", "Kubernetes", "Go"] },
+                            { name: "Microsoft Azure", stack: ["Azure", "PowerShell", ".NET"] }
+                        ],
+                        marketTrends: {
+                            topSkills: [ {name: "AWS", demand: 92}, {name: "Kubernetes", demand: 88}, {name: "Terraform", demand: 85}, {name: "Azure", demand: 75}, {name: "Docker", demand: 70} ],
+                            topCompanies: ["Amazon", "Microsoft", "Google", "Oracle", "IBM"]
+                        }
+                    },
+                    "ui-ux-designer": {
+                        pathName: "UI/UX Designer",
+                        description: "Designs user-friendly and visually appealing interfaces for digital products.",
+                        associatedInterests: ["UI/UX Design"],
+                        requiredSkills: ["UI/UX Principles", "Figma", "User Research", "Wireframing", "Prototyping"],
+                        suggestedProjects: [
+                            { title: "Redesign a Single App Screen", difficulty: "Beginner", videoUrl: "https://www.youtube.com/embed/5B-kZg_a4-I", hints: ["Choose an App: Pick a popular app you use often.", "Identify Flaws: Note down 2-3 things you find confusing or ugly.", "Redesign in Figma: Create a new design that solves those issues."] },
+                            { title: "Design a Coffee Ordering App", difficulty: "Intermediate", videoUrl: "https://www.youtube.com/embed/51hL2d4R_V8", hints: ["User Flow: Map out the user's journey from opening the app to completing an order.", "Wireframes: Create low-fidelity wireframes for each screen in the flow.", "High-Fidelity Mockup: Turn your wireframes into a polished design in Figma."] },
+                            { title: "Full Responsive Web App Design", difficulty: "Advanced", videoUrl: "https://www.youtube.com/embed/An2d_p_h-1M", hints: ["User Research: Create user personas and conduct surveys to understand user needs.", "Information Architecture: Plan the structure and navigation of the website.", "Responsive Design: Design mobile, tablet, and desktop versions of your key pages in Figma."] }
+                        ],
+                        resources: [
+                            { id: 'res-uiux', title: "UI/UX Design Full Course", learnsSkill: "UI/UX Principles", embedUrl: "https://www.youtube.com/embed/55NvZjUZUo8" },
+                            { id: 'res-figma', title: "Figma for Beginners", learnsSkill: "Figma", embedUrl: "https://www.youtube.com/embed/FTFa-yEkeA8" },
+                            { id: 'res-research', title: "User Research Fundamentals", learnsSkill: "User Research", embedUrl: "https://www.youtube.com/embed/LgYa4NB2fG8" },
+                            { id: 'res-wireframe', title: "Wireframing Tutorial", learnsSkill: "Wireframing", embedUrl: "https://www.youtube.com/embed/m4_Qk3mK_bM" },
+                            { id: 'res-prototype', title: "Interactive Prototyping in Figma", learnsSkill: "Prototyping", embedUrl: "https://www.youtube.com/embed/eZJOSK4gXl4" }
+                        ],
+                        companyStacks: [
+                            { name: "Apple", stack: ["Figma", "Sketch", "Keynote"] },
+                            { name: "Google", stack: ["Figma", "Material Design", "Adobe XD"] },
+                            { name: "IDEO", stack: ["Figma", "Miro", "UserTesting.com"] }
+                        ],
+                        marketTrends: {
+                            topSkills: [ {name: "Figma", demand: 98}, {name: "User Research", demand: 90}, {name: "Prototyping", demand: 85}, {name: "Adobe XD", demand: 70}, {name: "Design Systems", demand: 65} ],
+                            topCompanies: ["Apple", "Google", "Meta", "Microsoft", "Adobe"]
+                        }
+                    },
+                    "mobile-developer": {
+                        pathName: "Mobile Developer",
+                        description: "Builds applications for mobile devices like iOS and Android.",
+                        associatedInterests: ["Mobile Development"],
+                        requiredSkills: ["Swift (iOS)", "Kotlin (Android)", "Git", "REST APIs", "UI/UX Principles"],
+                        suggestedProjects: [
+                            { title: "Simple To-Do List App", difficulty: "Beginner", videoUrl: "https://www.youtube.com/embed/F-Lw2MYvj4c", hints: ["UI: Design a simple list view and a way to add new items.", "Data Persistence: Use UserDefaults (iOS) or SharedPreferences (Android) to save tasks.", "Functionality: Implement adding, deleting, and marking tasks as complete."] },
+                            { title: "Photo Gallery App", difficulty: "Intermediate", videoUrl: "https://www.youtube.com/embed/y2-1-MvU2-I", hints: ["Permissions: Request permission to access the user's photo library.", "Grid Layout: Display photos in a responsive grid.", "Detail View: Allow users to tap a photo to see it full-screen."] },
+                            { title: "Social Media Feed App", difficulty: "Advanced", videoUrl: "https://www.youtube.com/embed/8e0y2zhT7iA", hints: ["Backend: Use a service like Firebase for authentication and a real-time database.", "API Calls: Fetch posts from the database and display them in a feed.", "User Interaction: Implement features like liking posts and adding comments."] }
+                        ],
+                        resources: [
+                            { id: 'res-swift', title: "Swift Full Course", learnsSkill: "Swift (iOS)", embedUrl: "https://www.youtube.com/embed/comQ1-x2a1Q" },
+                            { id: 'res-kotlin', title: "Kotlin for Beginners", learnsSkill: "Kotlin (Android)", embedUrl: "https://www.youtube.com/embed/EExSSotojVI" },
+                            { id: 'res-git-mobile', title: "Git for Mobile Developers", learnsSkill: "Git", embedUrl: "https://www.youtube.com/embed/RGOj5yH7evk" },
+                            { id: 'res-rest-mobile', title: "REST APIs for Mobile Apps", learnsSkill: "REST APIs", embedUrl: "https://www.youtube.com/embed/7YcW25PHnAA" },
+                            { id: 'res-uiux-mobile', title: "Mobile UI/UX Design Principles", learnsSkill: "UI/UX Principles", embedUrl: "https://www.youtube.com/embed/e4uT-22_bI4" }
+                        ],
+                        companyStacks: [
+                            { name: "Apple", stack: ["Swift", "SwiftUI", "Xcode"] },
+                            { name: "Google", stack: ["Kotlin", "Jetpack Compose", "Android Studio"] },
+                            { name: "Uber", stack: ["Swift", "Kotlin", "RIBs"] }
+                        ],
+                        marketTrends: {
+                            topSkills: [ {name: "Swift", demand: 90}, {name: "Kotlin", demand: 88}, {name: "Flutter", demand: 75}, {name: "React Native", demand: 72}, {name: "Firebase", demand: 65} ],
+                            topCompanies: ["Apple", "Google", "Meta", "Uber", "Lyft"]
+                        }
+                    },
+                     "cybersecurity-analyst": {
+                        pathName: "Cybersecurity Analyst",
+                        description: "Protects computer networks and systems from security threats.",
+                        associatedInterests: ["Cybersecurity"],
+                        requiredSkills: ["Networking", "Linux", "Python", "Wireshark", "Security Principles"],
+                        suggestedProjects: [
+                            { title: "Set Up a Secure Home Network", difficulty: "Beginner", videoUrl: "https://www.youtube.com/embed/l-QEsU3kA4A", hints: ["Router Config: Change default passwords and disable WPS.", "Firewall Rules: Set up basic firewall rules to block unwanted traffic.", "Guest Network: Create a separate guest network for visitors."] },
+                            { title: "Analyze a PCAP File", difficulty: "Intermediate", videoUrl: "https://www.youtube.com/embed/8G5_2c9wI-g", hints: ["Download Wireshark: Install the network protocol analyzer.", "Find Sample PCAPs: Download sample capture files from Wireshark's wiki.", "Investigation: Look for suspicious traffic, unencrypted data, or policy violations."] },
+                            { title: "Set Up a Honeypot", difficulty: "Advanced", videoUrl: "https://www.youtube.com/embed/t8dbQ33y4sI", hints: ["Choose Software: Use an open-source honeypot like T-Pot.", "Deployment: Deploy it on a cloud server or a Raspberry Pi.", "Monitoring: Monitor the logs to see what kind of attacks your honeypot attracts."] }
+                        ],
+                        resources: [
+                            { id: 'res-net-sec', title: "Networking for Security", learnsSkill: "Networking", embedUrl: "https://www.youtube.com/embed/3QhU9jd03a0" },
+                            { id: 'res-linux-sec', title: "Linux for Ethical Hackers", learnsSkill: "Linux", embedUrl: "https://www.youtube.com/embed/sWbUDq4S6Y8" },
+                            { id: 'res-python-sec', title: "Python for Cybersecurity", learnsSkill: "Python", embedUrl: "https://www.youtube.com/embed/7-2z-12fS1I" },
+                            { id: 'res-wireshark', title: "Wireshark Full Course", learnsSkill: "Wireshark", embedUrl: "https://www.youtube.com/embed/8G5_2c9wI-g" },
+                            { id: 'res-sec-prin', title: "Cybersecurity Principles", learnsSkill: "Security Principles", embedUrl: "https://www.youtube.com/embed/inWWhr5tnEA" }
+                        ],
+                        companyStacks: [
+                            { name: "CrowdStrike", stack: ["Python", "AWS", "Splunk"] },
+                            { name: "Palo Alto Networks", stack: ["Linux", "Wireshark", "Metasploit"] },
+                            { name: "Mandiant", stack: ["PowerShell", "Azure", "SIEM"] }
+                        ],
+                        marketTrends: {
+                            topSkills: [ {name: "SIEM Tools", demand: 90}, {name: "Network Security", demand: 85}, {name: "Linux", demand: 80}, {name: "Python/Scripting", demand: 75}, {name: "Cloud Security (AWS/Azure)", demand: 70} ],
+                            topCompanies: ["CrowdStrike", "Palo Alto Networks", "Google", "Mandiant", "Booz Allen Hamilton"]
+                        }
+                    }
+                }
+            };
+            
+            // --- STATE & DOM ELEMENTS ---
+            let userProfile = null;
+            let currentRoadmapId = null; 
+            let currentAiRoadmapData = null; // Holds AI-generated roadmap data
+            let interviewHistory = [];
+            let chatbotHistory = [];
+            
+            const pages = { auth: document.getElementById('auth-page'), onboarding: document.getElementById('onboarding-page'), main: document.getElementById('main-content-page') };
+            const { loginContainer, signupContainer, loginForm, signupForm, showSignupBtn, showLoginBtn, logoutButton, profileButton, loginMessage, signupMessage, themeToggleButton, authThemeToggleButton } = {
+                loginContainer: document.getElementById('login-container'), signupContainer: document.getElementById('signup-container'), loginForm: document.getElementById('login-form'), signupForm: document.getElementById('signup-form'), showSignupBtn: document.getElementById('show-signup-btn'), showLoginBtn: document.getElementById('show-login-btn'), logoutButton: document.getElementById('logout-button'), profileButton: document.getElementById('profile-button'), loginMessage: document.getElementById('login-message'), signupMessage: document.getElementById('signup-message'), themeToggleButton: document.getElementById('theme-toggle-button'), authThemeToggleButton: document.getElementById('auth-theme-toggle-button')
+            };
+            const { onboardingForm, nameInput, interestsContainer, skillsInput, skillsTagsContainer } = { onboardingForm: document.getElementById('onboarding-page').querySelector('form'), nameInput: document.getElementById('name'), interestsContainer: document.getElementById('interests-container'), skillsInput: document.getElementById('skills-input'), skillsTagsContainer: document.getElementById('skills-tags-container') };
+            const { welcomeMessage, careerPathsContainer, dashboardContainer, roadmapContainer, lessonContainer, trendsContainer, marketTrendsButton } = {
+                welcomeMessage: document.getElementById('welcome-message'), careerPathsContainer: document.getElementById('career-paths-container'), dashboardContainer: document.getElementById('dashboard-container'), roadmapContainer: document.getElementById('roadmap-container'), lessonContainer: document.getElementById('lesson-container'), trendsContainer: document.getElementById('trends-container'), marketTrendsButton: document.getElementById('market-trends-button')
+            };
+            const { projectGuideModal, modalTitle, modalBody, modalCloseBtn } = { projectGuideModal: document.getElementById('project-guide-modal'), modalTitle: document.getElementById('modal-title'), modalBody: document.getElementById('modal-body'), modalCloseBtn: document.getElementById('modal-close-btn') };
+            const { profileModal, profileModalCloseBtn, profileEditForm } = { profileModal: document.getElementById('profile-modal'), profileModalCloseBtn: document.getElementById('profile-modal-close-btn'), profileEditForm: document.getElementById('profile-edit-form') };
+            const { interviewModal, interviewModalCloseBtn, interviewChatBox, interviewInput, interviewSendBtn } = { interviewModal: document.getElementById('interview-modal'), interviewModalCloseBtn: document.getElementById('interview-modal-close-btn'), interviewChatBox: document.getElementById('interview-chat-box'), interviewInput: document.getElementById('interview-input'), interviewSendBtn: document.getElementById('interview-send-btn') };
+            const { chatbotFab, chatbotContainer, chatbotMessages, chatbotInput, chatbotSendBtn, fabChatIcon, fabCloseIcon } = {
+            chatbotFab: document.getElementById('chatbot-fab'), 
+            chatbotContainer: document.getElementById('chatbot-container'), 
+            chatbotMessages: document.getElementById('chatbot-messages'), 
+            chatbotInput: document.getElementById('chatbot-input'), 
+            chatbotSendBtn: document.getElementById('chatbot-send-btn'), 
+            fabChatIcon: document.getElementById('fab-chat-icon'), 
+            fabCloseIcon: document.getElementById('fab-close-icon')
+            };
+        
+        // Check if chatbot elements exist
+        if (!chatbotFab || !chatbotContainer || !chatbotMessages || !chatbotInput || !chatbotSendBtn || !fabChatIcon || !fabCloseIcon) {
+            console.warn('Some chatbot elements not found - chatbot functionality may be limited');
+        }
+            const { authWatchDemoButton, watchDemoButton, demoVideoModal, demoModalCloseBtn, demoModalBody } = {
+                authWatchDemoButton: document.getElementById('auth-watch-demo-button'), watchDemoButton: document.getElementById('watch-demo-button'), demoVideoModal: document.getElementById('demo-video-modal'), demoModalCloseBtn: document.getElementById('demo-modal-close-btn'), demoModalBody: document.getElementById('demo-modal-body')
+            };
+            const signupPasswordInput = document.getElementById('signup-password');
+            const signupSubmitBtn = document.getElementById('signup-submit-btn');
+
+            // --- ROUTING & VIEW MANAGEMENT ---
+            const showPage = (pageId) => { Object.values(pages).forEach(page => page.classList.remove('active')); pages[pageId].classList.add('active'); window.scrollTo(0, 0); };
+            const showView = (view) => { dashboardContainer.style.display = 'none'; roadmapContainer.style.display = 'none'; lessonContainer.style.display = 'none'; trendsContainer.style.display = 'none'; document.getElementById(`${view}-container`).style.display = 'block'; };
+
+            // --- AUTHENTICATION ---
+            
+            const showAuthMessage = (type, message) => { const el = type === 'login' ? loginMessage : signupMessage; const isSuccess = message.includes('Success'); el.textContent = message; el.className = `text-center text-sm p-3 mb-4 rounded-lg ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`; el.classList.remove('hidden'); setTimeout(() => { el.classList.add('hidden'); }, 3000); };
+            showSignupBtn.addEventListener('click', () => { loginContainer.classList.add('hidden'); signupContainer.classList.remove('hidden'); validatePassword(); });
+            showLoginBtn.addEventListener('click', () => { signupContainer.classList.add('hidden'); loginContainer.classList.remove('hidden'); });
+
+            signupForm.addEventListener('submit', (e) => { e.preventDefault(); const email = document.getElementById('signup-email').value; const password = document.getElementById('signup-password').value; const users = getUsers(); if (users.find(u => u.email === email)) { showAuthMessage('signup', 'User already exists. Please login.'); return; } const newUser = { email, password, profile: null }; users.push(newUser); saveUsers(users); signupForm.reset(); showAuthMessage('login', 'Success! Please login with your new account.'); showLoginBtn.click(); });
+            loginForm.addEventListener('submit', (e) => { e.preventDefault(); const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; const users = getUsers(); const foundUser = users.find(u => u.email === email && u.password === password); if (foundUser) { setLoggedInUser(foundUser); userProfile = foundUser.profile; if (userProfile) { initMainContent(); showPage('main'); } else { userProfile = { name: '', interests: [], skills: [], completedLessons: [], badges: [], aiRoadmaps: [] }; initOnboarding(); showPage('onboarding'); } } else { showAuthMessage('login', 'Invalid email or password.'); } });
+            logoutButton.addEventListener('click', () => { logoutUser(); userProfile = null; loginForm.reset(); signupForm.reset(); showPage('auth'); });
+
+            // --- PASSWORD STRENGTH VALIDATION ---
+            const validatePassword = () => {
+                const password = signupPasswordInput.value;
+                const validIcon = `<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>`;
+                const pendingIcon = `<svg class="w-4 h-4 text-secondary" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/></svg>`;
+                
+                const rules = {
+                    length: password.length >= 8,
+                    uppercase: /[A-Z]/.test(password),
+                    lowercase: /[a-z]/.test(password),
+                    number: /[0-9]/.test(password),
+                    special: /[^A-Za-z0-9]/.test(password)
+                };
+
+                let allValid = true;
+                for (const rule in rules) {
+                    const el = document.getElementById(`rule-${rule}`);
+                    const icon = el.querySelector('.rule-icon');
+                    if (rules[rule]) {
+                        el.classList.add('rule-valid');
+                        icon.innerHTML = validIcon;
+                    } else {
+                        el.classList.remove('rule-valid');
+                        icon.innerHTML = pendingIcon;
+                        allValid = false;
+                    }
+                }
+                signupSubmitBtn.disabled = !allValid;
+            };
+            signupPasswordInput.addEventListener('input', validatePassword);
+
+
+            // --- PROFILE MODAL ---
+            profileButton.addEventListener('click', () => { const loggedInUser = getLoggedInUser(); if (loggedInUser && loggedInUser.profile) { document.getElementById('profile-edit-name').value = loggedInUser.profile.name; const interestsEl = document.getElementById('profile-edit-interests'); interestsEl.innerHTML = db.interests.map(i => `<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="${i}" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500" ${loggedInUser.profile.interests.includes(i) ? 'checked' : ''}><span class="text-sm">${i}</span></label>`).join(''); const skillsEl = document.getElementById('profile-edit-skills'); skillsEl.innerHTML = loggedInUser.profile.skills.map(s => `<span class="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-1 rounded-full flex items-center">${s}<button data-skill="${s}" class="profile-remove-skill-btn ml-2 text-indigo-600 hover:text-indigo-900">&times;</button></span>`).join('');
+                const achievementsSection = document.getElementById('achievements-section');
+                achievementsSection.innerHTML = `<label class="text-sm font-medium text-secondary">Achievements</label><div class="flex flex-wrap gap-2 mt-1">${(userProfile.badges || []).map(b => `<span class="badge badge-acquired">${b}</span>`).join('') || '<p class="text-sm text-secondary">No badges earned yet.</p>'}</div>`;
+                profileModal.style.display = 'flex'; } });
+            profileModalCloseBtn.addEventListener('click', () => { profileModal.style.display = 'none'; });
+            document.getElementById('profile-edit-skills').addEventListener('click', (e) => { if(e.target.classList.contains('profile-remove-skill-btn')) { const skillToRemove = e.target.dataset.skill; const skillsEl = document.getElementById('profile-edit-skills'); const skillTags = Array.from(skillsEl.children); const tagToRemove = skillTags.find(tag => tag.textContent.includes(skillToRemove)); if(tagToRemove) tagToRemove.remove(); } });
+            document.getElementById('profile-add-skill-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); const input = e.target; const skillName = input.value.trim(); if (skillName) { const skillsEl = document.getElementById('profile-edit-skills'); const newSkillTag = document.createElement('span'); newSkillTag.className = "bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-1 rounded-full flex items-center"; newSkillTag.innerHTML = `${skillName}<button data-skill="${skillName}" class="profile-remove-skill-btn ml-2 text-indigo-600 hover:text-indigo-900">&times;</button>`; skillsEl.appendChild(newSkillTag); input.value = ''; } } });
+            profileEditForm.addEventListener('submit', (e) => { e.preventDefault(); const newName = document.getElementById('profile-edit-name').value; const newInterests = Array.from(document.querySelectorAll('#profile-edit-interests input:checked')).map(el => el.value); const newSkills = Array.from(document.querySelectorAll('#profile-edit-skills .profile-remove-skill-btn')).map(btn => btn.dataset.skill); userProfile.name = newName; userProfile.interests = newInterests; userProfile.skills = newSkills; const loggedInUser = getLoggedInUser(); loggedInUser.profile = userProfile; const users = getUsers(); const userIndex = users.findIndex(u => u.email === loggedInUser.email); users[userIndex] = loggedInUser; saveUsers(users); setLoggedInUser(loggedInUser); profileModal.style.display = 'none'; initMainContent(); });
+
+            // --- ONBOARDING & SKILLS ---
+            const initOnboarding = () => { onboardingForm.reset(); skillsTagsContainer.innerHTML = ''; interestsContainer.innerHTML = db.interests.map(interest => `<div class="flex items-center"><input id="interest-${interest.replace(/\s/g, '-')}" type="checkbox" value="${interest}" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500"><label for="interest-${interest.replace(/\s/g, '-')}" class="ml-2 text-sm font-medium text-gray-900">${interest}</label></div>`).join(''); };
+            const addSkill = (skillName) => { const formattedSkill = skillName.trim(); if (formattedSkill && userProfile && !userProfile.skills.some(s => s.toLowerCase() === formattedSkill.toLowerCase())) { userProfile.skills.push(formattedSkill); renderSkillsTags(); } };
+            const renderSkillsTags = () => { if (!userProfile) return; skillsTagsContainer.innerHTML = userProfile.skills.map(skill => `<span class="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full flex items-center">${skill}<button data-skill="${skill}" class="remove-skill-btn ml-2 text-indigo-600 hover:text-indigo-900">&times;</button></span>`).join(''); };
+            skillsInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (pages.onboarding.classList.contains('active')) { addSkill(skillsInput.value); skillsInput.value = ''; } } });
+            skillsTagsContainer.addEventListener('click', (e) => { if (e.target.classList.contains('remove-skill-btn')) { userProfile.skills = userProfile.skills.filter(s => s !== e.target.dataset.skill); renderSkillsTags(); } });
+            onboardingForm.addEventListener('submit', (e) => { e.preventDefault(); userProfile.name = nameInput.value; userProfile.interests = Array.from(interestsContainer.querySelectorAll('input:checked')).map(el => el.value); const loggedInUser = getLoggedInUser(); loggedInUser.profile = userProfile; const users = getUsers(); const userIndex = users.findIndex(u => u.email === loggedInUser.email); users[userIndex] = loggedInUser; saveUsers(users); setLoggedInUser(loggedInUser); initMainContent(); showPage('main'); });
+
+            // --- MAIN CONTENT & DASHBOARD ---
+            const initMainContent = () => { welcomeMessage.textContent = `Welcome back, ${userProfile.name}!`; initDashboard(); };
+            const initDashboard = () => {
+                currentAiRoadmapData = null;
+                dashboardContainer.innerHTML = `
+                    <section class="mb-12"><h2 id="dashboard-title" class="text-2xl font-bold mb-4"></h2><div id="career-paths-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div></section>
+                    <section id="custom-roadmaps-section" class="mb-12"></section>
+                    <section><h2 class="text-2xl font-bold mb-4 flex items-center gap-3">Or, Generate a Custom Roadmap <span class="badge badge-acquired">Powered by Gemini AI</span></h2><div class="bg-card p-6 rounded-xl shadow-lg ai-card-glow"><p class="text-secondary mb-4">Have a specific goal? Describe your dream job, and our Gemini-powered AI will generate a personalized roadmap for you.</p><div id="ai-generator"><textarea id="ai-prompt-input" class="w-full bg-secondary border border-border-color text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block p-3" rows="3" placeholder="e.g., 'AAA Game Developer' or 'AI engineer specializing in natural language processing'"></textarea><button id="ai-generate-btn" class="mt-4 w-full sm:w-auto btn-primary font-medium rounded-lg text-sm px-6 py-3 text-center">Generate with AI</button></div></div></section>`;
+                
+                const careerPathsContainer = document.getElementById('career-paths-container');
+                const dashboardTitle = document.getElementById('dashboard-title');
+                
+                let pathsToShow = Object.entries(db.careerPaths).filter(([id, pathData]) => 
+                    pathData.associatedInterests.some(interest => userProfile.interests.includes(interest))
+                );
+
+                if (pathsToShow.length === 0) {
+                    dashboardTitle.textContent = "Explore Popular Career Paths";
+                    pathsToShow = Object.entries(db.careerPaths);
+                } else {
+                    dashboardTitle.textContent = "Recommended For You";
+                }
+
+                careerPathsContainer.innerHTML = pathsToShow.map(([pathId, pathData], index) => {
+                    const matchedSkills = userProfile.skills.filter(skill => pathData.requiredSkills.some(req => req.toLowerCase() === skill.toLowerCase()));
+                    const matchPercentage = pathData.requiredSkills.length > 0 ? Math.round((matchedSkills.length / pathData.requiredSkills.length) * 100) : 0;
+                    return `<div class="bg-card p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 animate-stagger" style="animation-delay: ${index * 100}ms" data-path-id="${pathId}"><h3 class="text-xl font-bold mb-2">${pathData.pathName}</h3><p class="text-secondary text-sm mb-4 h-16">${pathData.description}</p><div class="w-full bg-secondary rounded-full h-2.5 mb-2"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${matchPercentage}%"></div></div><p class="text-sm font-medium text-secondary">${matchPercentage}% Match (${matchedSkills.length} of ${pathData.requiredSkills.length} skills)</p></div>`;
+                }).join('');
+                careerPathsContainer.querySelectorAll('[data-path-id]').forEach(card => card.addEventListener('click', (e) => { initRoadmap(e.currentTarget.dataset.pathId); showView('roadmap'); }));
+                
+                const customRoadmapsSection = document.getElementById('custom-roadmaps-section');
+                if (userProfile.aiRoadmaps && userProfile.aiRoadmaps.length > 0) {
+                    customRoadmapsSection.innerHTML = `<h2 class="text-2xl font-bold mb-4">Your Custom Roadmaps</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${userProfile.aiRoadmaps.map((roadmap, index) => `<div class="bg-card p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 animate-stagger" style="animation-delay: ${index * 100}ms" data-ai-roadmap-index="${index}"><h3 class="text-xl font-bold mb-2">${roadmap.pathName}</h3><p class="text-secondary text-sm mb-4 min-h-[4rem]">${roadmap.description}</p></div>`).join('')}</div>`;
+                    customRoadmapsSection.querySelectorAll('[data-ai-roadmap-index]').forEach(card => card.addEventListener('click', (e) => { const index = e.currentTarget.dataset.aiRoadmapIndex; initRoadmap('ai-generated', userProfile.aiRoadmaps[index]); showView('roadmap'); }));
+                }
+
+                document.getElementById('ai-generate-btn').addEventListener('click', generateAiRoadmap);
+                showView('dashboard');
+            };
+
+            // --- ROADMAP ---
+            const initRoadmap = (pathId, aiGeneratedData = null) => {
+                currentRoadmapId = pathId;
+                if (aiGeneratedData) { currentAiRoadmapData = aiGeneratedData; }
+                const pathData = aiGeneratedData || db.careerPaths[pathId];
+                
+                // Validate pathData structure
+                if (!pathData) {
+                    console.error('Path data is undefined');
+                    alert('Error: Could not load roadmap data');
+                    initDashboard();
+                    return;
+                }
+                
+                // Ensure all required properties exist with fallbacks
+                const safePathData = {
+                    pathName: pathData.pathName || 'Unknown Career Path',
+                    description: pathData.description || 'No description available',
+                    requiredSkills: Array.isArray(pathData.requiredSkills) ? pathData.requiredSkills : [],
+                    suggestedProjects: Array.isArray(pathData.suggestedProjects) ? pathData.suggestedProjects : [],
+                    resources: Array.isArray(pathData.resources) ? pathData.resources : [],
+                    companyStacks: Array.isArray(pathData.companyStacks) ? pathData.companyStacks : [],
+                    marketTrends: pathData.marketTrends || { topSkills: [], topCompanies: [] }
+                };
+                
+                roadmapContainer.innerHTML = `
+                    <header class="mb-8">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                            <button id="back-to-dashboard" class="inline-flex items-center text-sm font-medium text-accent hover:underline">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                </svg>Back to Dashboard
+                            </button>
+                            <button id="share-roadmap-btn" class="inline-flex items-center text-sm font-medium btn-primary py-2 px-4 rounded-lg transition-colors hover:opacity-90">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                </svg>Share My Roadmap
+                            </button>
+                        </div>
+                        <h1 class="text-3xl font-bold flex items-center gap-3">${safePathData.pathName} ${pathId === 'ai-generated' ? '<span class="badge badge-acquired">AI-Generated</span>' : ''}</h1>
+                        <p class="text-secondary mt-1">${safePathData.description}</p>
+                    </header>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2">
+                            <section class="mb-8"><h2 class="text-2xl font-bold mb-4">Core Curriculum</h2><div id="skill-analysis-container" class="space-y-4"></div></section>
+                            <section class="mb-8"><h2 class="text-2xl font-bold mb-4">Top Company Stacks</h2><div id="company-stacks-container" class="space-y-4"></div></section>
+                            <section><h2 class="text-2xl font-bold mb-4">Project Suggestions</h2><div id="project-suggestions-container" class="space-y-6"></div></section>
+                        </div>
+                        <div class="lg:col-span-1">
+                            <section class="mb-8"><h2 class="text-2xl font-bold mb-4">Learning Resources</h2><div id="learning-resources-container" class="space-y-4"></div></section>
+                            <section><h2 class="text-2xl font-bold mb-4">Career Prep</h2><div class="bg-card p-6 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-4">Ready for an interview?</h4><p class="text-secondary text-sm mb-4">Practice with our AI interviewer to sharpen your skills.</p><button id="start-interview-btn" class="w-full text-sm font-medium btn-primary py-2 px-4 rounded-lg transition-colors">Start Mock Interview</button></div></section>
+                        </div>
+                    </div>`;
+
+                document.getElementById('back-to-dashboard').addEventListener('click', () => initDashboard());
+                document.getElementById('share-roadmap-btn').addEventListener('click', () => exportRoadmapToPDF(safePathData, pathId));
+                document.getElementById('start-interview-btn').addEventListener('click', () => initInterview());
+                
+                const skillAnalysisContainer = document.getElementById('skill-analysis-container');
+                skillAnalysisContainer.innerHTML = safePathData.requiredSkills.map((skill, index) => { const hasSkill = userProfile.skills.some(s => s.toLowerCase() === skill.toLowerCase()); return `<div class="flex items-center justify-between bg-card p-4 rounded-lg shadow-sm animate-stagger" style="animation-delay: ${index * 50}ms"><span class="font-medium ${hasSkill ? '' : 'skill-name-gap'}">${skill}</span>${hasSkill ? `<span class="badge badge-acquired">Acquired</span>` : `<span class="badge badge-gap">Skill Gap</span>`}</div>`; }).join('');
+                document.getElementById('company-stacks-container').innerHTML = safePathData.companyStacks.map((cs, index) => `<div class="bg-card p-4 rounded-lg shadow-sm animate-stagger" style="animation-delay: ${index * 50}ms"><h4 class="font-bold">${cs.name}</h4><div class="flex flex-wrap gap-2 mt-2">${cs.stack.map(s => `<span class="bg-secondary text-secondary text-xs font-medium px-2.5 py-1 rounded-full">${s}</span>`).join('')}</div></div>`).join('');
+                document.getElementById('project-suggestions-container').innerHTML = safePathData.suggestedProjects.map((p, index) => `<div class="bg-card p-6 rounded-lg shadow-sm animate-stagger" style="animation-delay: ${index * 100}ms"><span class="inline-block tag-skill text-xs font-semibold px-2 py-1 rounded-full mb-2">${p.difficulty}</span><h4 class="font-bold text-lg mb-4">${p.title}</h4><div class="flex flex-col sm:flex-row gap-2"><button class="view-hints-btn w-full text-sm font-medium text-primary hover:text-primary py-2 px-4 rounded-lg bg-secondary hover:bg-[--accent-light] transition-colors" data-project-index="${index}">View Hints</button><button class="watch-guide-btn w-full text-sm font-medium btn-primary py-2 px-4 rounded-lg transition-colors" data-project-index="${index}">Watch Guide</button></div></div>`).join('');
+                document.querySelectorAll('.view-hints-btn').forEach(btn => btn.addEventListener('click', (e) => showProjectHintsModal(e.currentTarget.dataset.projectIndex, aiGeneratedData)));
+                document.querySelectorAll('.watch-guide-btn').forEach(btn => btn.addEventListener('click', (e) => showProjectVideoModal(e.currentTarget.dataset.projectIndex, aiGeneratedData)));
+                document.getElementById('learning-resources-container').innerHTML = safePathData.resources.map((resource, index) => { const isCompleted = userProfile.completedLessons.includes(resource.id); return `<div class="block bg-card p-4 rounded-lg shadow-sm hover:bg-secondary transition-colors cursor-pointer animate-stagger" style="animation-delay: ${index * 50}ms" data-resource-id="${resource.id}"><div class="flex justify-between items-center"><div><h4 class="font-bold">${resource.title}</h4><p class="text-sm text-accent">Learns: ${resource.learnsSkill}</p></div>${isCompleted ? `<span class="inline-flex items-center gap-x-1.5 py-1 px-2 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-300">Completed</span>` : `<svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`}</div></div>`; }).join('');
+                document.querySelectorAll('[data-resource-id]').forEach(card => card.addEventListener('click', (e) => { initLesson(e.currentTarget.dataset.resourceId, aiGeneratedData); showView('lesson'); }));
+                
+                // Check for skill gap closure badge
+                const allSkillsMet = safePathData.requiredSkills.every(skill => userProfile.skills.some(s => s.toLowerCase() === skill.toLowerCase()));
+                if (allSkillsMet && safePathData.requiredSkills.length > 0) {
+                    awardBadge(`Skill Gap Closed: ${safePathData.pathName}`);
+                }
+            };
+            
+            // --- PROJECT GUIDE MODALS ---
+            const showProjectHintsModal = (projectIndex, aiData) => { 
+                const pathData = aiData || db.careerPaths[currentRoadmapId];
+                if (!pathData || !pathData.suggestedProjects || !pathData.suggestedProjects[projectIndex]) {
+                    alert('Project data not found');
+                    return;
+                }
+                const project = pathData.suggestedProjects[projectIndex];
+                awardBadge("First Project Started"); 
+                modalTitle.textContent = `Hints for: ${project.title}`; 
+                modalBody.innerHTML = `<ol class="list-decimal list-inside space-y-2 text-secondary">${(project.hints || []).map(hint => `<li>${hint}</li>`).join('')}</ol>`; 
+                projectGuideModal.style.display = 'flex'; 
+            };
+            const showProjectVideoModal = (projectIndex, aiData) => { 
+                const pathData = aiData || db.careerPaths[currentRoadmapId];
+                if (!pathData || !pathData.suggestedProjects || !pathData.suggestedProjects[projectIndex]) {
+                    alert('Project data not found');
+                    return;
+                }
+                const project = pathData.suggestedProjects[projectIndex];
+                modalTitle.textContent = `Video Guide: ${project.title}`; 
+                modalBody.innerHTML = `<div class="aspect-video-container"><iframe class="rounded-lg" src="${project.videoUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`; 
+                projectGuideModal.style.display = 'flex'; 
+            };
+            modalCloseBtn.addEventListener('click', () => { projectGuideModal.style.display = 'none'; modalBody.innerHTML = ''; });
+
+            // --- LESSON & COMPLETION ---
+            const initLesson = (resourceId, aiData) => {
+                const pathData = aiData || db.careerPaths[currentRoadmapId];
+                if (!pathData || !pathData.resources) {
+                    alert('Resource data not found');
+                    return;
+                }
+                const resource = pathData.resources.find(r => r.id === resourceId);
+                if (!resource) {
+                    alert('Resource not found');
+                    return;
+                }
+                lessonContainer.innerHTML = `<header class="mb-8"><button id="back-to-roadmap-lesson" class="mb-4 inline-flex items-center text-sm font-medium text-accent hover:underline"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Back to Roadmap</button><h1 class="text-3xl font-bold">${resource.title}</h1></header><main class="bg-card p-8 rounded-xl shadow-lg"><div class="aspect-video-container mb-6 rounded-lg overflow-hidden"><iframe class="rounded-lg" src="${resource.embedUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><div id="lesson-actions-container" class="flex flex-col sm:flex-row gap-4"></div></main>`;
+                document.getElementById('back-to-roadmap-lesson').addEventListener('click', () => { initRoadmap(currentRoadmapId, aiData); showView('roadmap'); });
+                const lessonActionsContainer = document.getElementById('lesson-actions-container');
+                if (userProfile.completedLessons.includes(resource.id)) { lessonActionsContainer.innerHTML = `<p class="font-medium text-green-500">You have already completed this lesson!</p>`; } else { const completeBtn = document.createElement('button'); completeBtn.className = 'w-full sm:w-auto text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-5 py-3 text-center transition-colors'; completeBtn.textContent = 'Mark as Complete'; completeBtn.onclick = () => completeLesson(resource); lessonActionsContainer.appendChild(completeBtn); }
+            };
+            const completeLesson = (resource) => {
+                if (!userProfile.completedLessons.includes(resource.id)) {
+                    userProfile.completedLessons.push(resource.id);
+                    if (userProfile.completedLessons.length === 1) {
+                        awardBadge("First Step Taken");
+                    }
+                }
+                if (resource.learnsSkill) { const formattedSkill = resource.learnsSkill.trim(); if (formattedSkill && !userProfile.skills.some(s => s.toLowerCase() === formattedSkill.toLowerCase())) { userProfile.skills.push(formattedSkill); } }
+                const loggedInUser = getLoggedInUser(); loggedInUser.profile = userProfile; const users = getUsers(); const userIndex = users.findIndex(u => u.email === loggedInUser.email); users[userIndex] = loggedInUser; saveUsers(users); setLoggedInUser(loggedInUser); initLesson(resource.id);
+            };
+            
+            // --- MARKET TRENDS ---
+            marketTrendsButton.addEventListener('click', () => {
+                initTrendsPage();
+                showView('trends');
+            });
+            const initTrendsPage = () => {
+                trendsContainer.innerHTML = `
+                    <header class="mb-8"><button id="back-to-dashboard-trends" class="mb-4 inline-flex items-center text-sm font-medium text-accent hover:underline"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Back to Dashboard</button><h1 class="text-3xl font-bold">Market Trends</h1><p class="text-secondary mt-1">Select a career path to see data-driven insights.</p></header>
+                    <div class="mb-6"><select id="trends-path-selector" class="w-full max-w-xs bg-card border border-border-color text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block p-3"><option value="">Select a career path...</option>${Object.entries(db.careerPaths).map(([id, data]) => `<option value="${id}">${data.pathName}</option>`).join('')}</select></div>
+                    <div id="trends-data-container"></div>`;
+                document.getElementById('back-to-dashboard-trends').addEventListener('click', () => initDashboard());
+                document.getElementById('trends-path-selector').addEventListener('change', (e) => displayTrendData(e.target.value));
+            };
+            const displayTrendData = (pathId) => {
+                const container = document.getElementById('trends-data-container');
+                if (!pathId) {
+                    container.innerHTML = '';
+                    return;
+                }
+                const pathData = db.careerPaths[pathId];
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-card p-6 rounded-xl shadow-lg"><h3 class="font-bold text-xl mb-4">Top In-Demand Skills</h3><div class="space-y-4">${pathData.marketTrends.topSkills.map(s => `<div class="animate-stagger"><div class="flex justify-between mb-1"><span class="text-base font-medium text-primary">${s.name}</span><span class="text-sm font-medium text-secondary">${s.demand}%</span></div><div class="w-full bg-secondary rounded-full h-2.5"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${s.demand}%"></div></div></div>`).join('')}</div></div>
+                        <div class="bg-card p-6 rounded-xl shadow-lg"><h3 class="font-bold text-xl mb-4">Top Hiring Companies</h3><div class="space-y-3">${pathData.marketTrends.topCompanies.map((c, i) => `<div class="bg-secondary p-3 rounded-lg animate-stagger" style="animation-delay: ${i*100}ms">${c}</div>`).join('')}</div></div>
+                    </div>`;
+            };
+
+            // --- AI FEATURES ---
+            // API calls are now handled securely through the backend server
+
+            async function generateAiRoadmap() {
+                const prompt = document.getElementById('ai-prompt-input').value;
+                if (!prompt) { alert("Please enter a career goal."); return; }
+                const generatorDiv = document.getElementById('ai-generator');
+                generatorDiv.innerHTML = `<div class="spinner"></div><p class="text-center text-secondary">Generating your custom roadmap...</p>`;
+
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        pathName: { type: "STRING" },
+                        description: { type: "STRING" },
+                        requiredSkills: { type: "ARRAY", items: { type: "STRING" } },
+                        suggestedProjects: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    difficulty: { type: "STRING" },
+                                    videoUrl: { type: "STRING" },
+                                    hints: { type: "ARRAY", items: { type: "STRING" } }
+                                },
+                                required: ["title", "difficulty", "videoUrl", "hints"]
+                            }
+                        },
+                        resources: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    id: { type: "STRING" },
+                                    title: { type: "STRING" },
+                                    learnsSkill: { type: "STRING" },
+                                    embedUrl: { type: "STRING" }
+                                },
+                                required: ["id", "title", "learnsSkill", "embedUrl"]
+                            }
+                        },
+                         companyStacks: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: { name: { type: "STRING" }, stack: { type: "ARRAY", items: { type: "STRING" } } },
+                                required: ["name", "stack"]
+                            }
+                        },
+                        marketTrends: {
+                            type: "OBJECT",
+                            properties: {
+                                topSkills: {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: { name: { type: "STRING" }, demand: { type: "NUMBER" } },
+                                        required: ["name", "demand"]
+                                    }
+                                },
+                                topCompanies: { type: "ARRAY", items: { type: "STRING" } }
+                            },
+                            required: ["topSkills", "topCompanies"]
+                        }
+                    },
+                    required: ["pathName", "description", "requiredSkills", "suggestedProjects", "resources", "companyStacks", "marketTrends"]
+                };
+
+                const fullPrompt = `You are a career development expert. Generate a detailed career roadmap for: "${prompt}".
+
+IMPORTANT: You must respond with ONLY a valid JSON object. Do not include any markdown formatting, backticks, code blocks, or explanatory text.
+
+The JSON must have this exact structure:
+{
+  "pathName": "Career Path Name",
+  "description": "Detailed description of this career path",
+  "requiredSkills": ["Skill 1", "Skill 2", "Skill 3"],
+  "suggestedProjects": [
+    {
+      "title": "Project Title",
+      "difficulty": "Beginner/Intermediate/Advanced",
+      "videoUrl": "https://www.youtube.com/embed/VIDEO_ID",
+      "hints": ["Hint 1", "Hint 2", "Hint 3"]
+    }
+  ],
+  "resources": [
+    {
+      "id": "unique-id",
+      "title": "Resource Title",
+      "learnsSkill": "Skill Name",
+      "embedUrl": "https://www.youtube.com/embed/VIDEO_ID"
+    }
+  ],
+  "companyStacks": [
+    {
+      "name": "Company Name",
+      "stack": ["Technology 1", "Technology 2"]
+    }
+  ],
+  "marketTrends": {
+    "topSkills": [
+      {"name": "Skill Name", "demand": 85}
+    ],
+    "topCompanies": ["Company 1", "Company 2"]
+  }
+}
+
+For videoUrl and embedUrl, use real YouTube video IDs in the format "https://www.youtube.com/embed/VIDEO_ID". Ensure all fields are populated with relevant, high-quality information.`;
+
+                try {
+                    const response = await fetch('/api/generate-roadmap', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: fullPrompt, schema }) // or the relevant payload
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    let jsonText = result.candidates[0].content.parts[0].text;
+                    
+                    // Clean up the response - remove markdown formatting if present
+                    if (jsonText.includes('```json')) {
+                        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    }
+                    
+                    let aiData;
+                    try {
+                        aiData = JSON.parse(jsonText);
+                    } catch (parseError) {
+                        console.error('JSON Parse Error:', parseError);
+                        console.log('Raw response:', jsonText);
+                        throw new Error('Invalid JSON response from AI');
+                    }
+                    
+                    // Debug: Log the parsed data
+                    console.log('Parsed AI data:', aiData);
+                    
+                    // Validate and provide fallbacks for the AI data structure
+                    if (!aiData.pathName) {
+                        aiData.pathName = `Custom ${prompt} Career Path`;
+                    }
+                    if (!aiData.description) {
+                        aiData.description = `A personalized career roadmap for ${prompt}`;
+                    }
+                    if (!Array.isArray(aiData.requiredSkills)) {
+                        aiData.requiredSkills = [];
+                    }
+                    if (!Array.isArray(aiData.suggestedProjects)) {
+                        aiData.suggestedProjects = [];
+                    }
+                    if (!Array.isArray(aiData.resources)) {
+                        aiData.resources = [];
+                    }
+                    if (!Array.isArray(aiData.companyStacks)) {
+                        aiData.companyStacks = [];
+                    }
+                    if (!aiData.marketTrends) {
+                        aiData.marketTrends = { topSkills: [], topCompanies: [] };
+                    }
+                    
+                    if (!userProfile.aiRoadmaps) userProfile.aiRoadmaps = [];
+                    userProfile.aiRoadmaps.push(aiData);
+                    const loggedInUser = getLoggedInUser();
+                    loggedInUser.profile = userProfile;
+                    const users = getUsers();
+                    const userIndex = users.findIndex(u => u.email === loggedInUser.email);
+                    users[userIndex] = loggedInUser;
+                    saveUsers(users);
+                    setLoggedInUser(loggedInUser);
+
+                    initRoadmap('ai-generated', aiData);
+                    showView('roadmap');
+                } catch (error) {
+                    console.error("AI Generation Error:", error);
+                    let errorMessage = "Sorry, there was an error generating the AI roadmap. Please try again.";
+                    
+                    if (error.message.includes('missing required fields')) {
+                        errorMessage = "The AI response was incomplete. Please try again with a more specific career goal.";
+                    } else if (error.message.includes('Invalid JSON')) {
+                        errorMessage = "The AI response was not in the correct format. Please try again.";
+                    }
+                    
+                    alert(errorMessage);
+                    
+                    // Restore the AI generator form
+                    const generatorDiv = document.getElementById('ai-generator');
+                    if (generatorDiv) {
+                        generatorDiv.innerHTML = `
+                            <div class="bg-card p-6 rounded-lg shadow-sm">
+                                <h3 class="font-bold text-lg mb-4">Generate Custom Roadmap</h3>
+                                <p class="text-secondary text-sm mb-4">Describe your career goal and we'll create a personalized roadmap for you.</p>
+                                <div class="flex gap-2">
+                                    <input type="text" id="ai-prompt-input" class="flex-grow bg-secondary border border-theme text-primary text-sm rounded-lg focus:ring-2 focus:ring-accent block w-full p-3" placeholder="e.g., I want to become a Data Scientist">
+                                    <button onclick="generateAiRoadmap()" class="btn-primary font-medium rounded-lg text-sm px-5 py-3 text-center">Generate</button>
+                                </div>
+                            </div>`;
+                    }
+                    initDashboard(); // Reset dashboard view on error
+                }
+            }
+            
+            async function initInterview() {
+                let pathData = currentRoadmapId === 'ai-generated' ? currentAiRoadmapData : db.careerPaths[currentRoadmapId];
+                if (!pathData) { 
+                    alert("Could not load interview data."); 
+                    return; 
+                }
+                if (!pathData.pathName) {
+                    alert("Invalid roadmap data for interview.");
+                    return;
+                }
+                awardBadge("Interview Ready");
+                interviewChatBox.innerHTML = '';
+                interviewModal.style.display = 'flex';
+                interviewHistory = [];
+
+                const addMessage = (text, sender) => {
+                    const bubble = document.createElement('div');
+                    bubble.className = `chat-bubble chat-${sender} animate-stagger`;
+                    bubble.textContent = text;
+                    interviewChatBox.appendChild(bubble);
+                    interviewChatBox.scrollTop = interviewChatBox.scrollHeight;
+                };
+                
+                const getAiResponse = async () => {
+                    try {
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: interviewHistory })
+                        });
+                        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                        const result = await response.json();
+                        const aiText = result.candidates[0].content.parts[0].text;
+                        interviewHistory.push({ role: 'model', parts: [{ text: aiText }] });
+                        addMessage(aiText, 'ai');
+                    } catch (error) {
+                        console.error("AI Interview Error:", error);
+                        addMessage("Sorry, I'm having trouble connecting. Please try again later.", 'ai');
+                    }
+                };
+
+                const handleSend = async () => {
+                    const answer = interviewInput.value.trim();
+                    if (!answer) return;
+                    addMessage(answer, 'user');
+                    interviewHistory.push({ role: 'user', parts: [{ text: answer }] });
+                    interviewInput.value = '';
+                    interviewInput.disabled = true;
+                    interviewSendBtn.disabled = true;
+                    
+                    await getAiResponse();
+
+                    interviewInput.disabled = false;
+                    interviewSendBtn.disabled = false;
+                    interviewInput.focus();
+                };
+                
+                interviewSendBtn.onclick = handleSend;
+                interviewInput.onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
+                
+                // Start the interview
+                const initialPrompt = `You are an expert interviewer for a ${pathData.pathName} position. Start the mock interview by asking me the first question.`;
+                interviewHistory.push({ role: 'user', parts: [{ text: initialPrompt }] });
+                await getAiResponse();
+            }
+            interviewModalCloseBtn.addEventListener('click', () => { interviewModal.style.display = 'none'; });
+
+            // --- CHATBOT ---
+            const addChatMessage = (text, sender) => {
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble chat-${sender} animate-stagger`;
+                bubble.textContent = text;
+                chatbotMessages.appendChild(bubble);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            };
+
+            if (chatbotFab) chatbotFab.addEventListener('click', () => {
+                if (!chatbotContainer || !fabChatIcon || !fabCloseIcon) {
+                    console.error('Chatbot elements not found');
+                    return;
+                }
+                const isActive = chatbotContainer.classList.toggle('active');
+                fabChatIcon.classList.toggle('hidden', isActive);
+                fabCloseIcon.classList.toggle('hidden', !isActive);
+                if (isActive && chatbotMessages && chatbotMessages.children.length === 0) {
+                    addChatMessage("Hello! I'm your AI Assistant. Ask me anything about Career Companion or our services.", 'ai');
+                }
+            });
+
+            const handleChatSend = async () => {
+                const userInput = chatbotInput.value.trim();
+                if (!userInput) return;
+
+                addChatMessage(userInput, 'user');
+                chatbotHistory.push({ role: 'user', parts: [{ text: userInput }] });
+                chatbotInput.value = '';
+                chatbotInput.disabled = true;
+
+                const typingIndicator = document.createElement('div');
+                typingIndicator.className = 'chat-bubble chat-ai animate-stagger';
+                typingIndicator.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 0;"></div>';
+                chatbotMessages.appendChild(typingIndicator);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+                const prompt = `You are a helpful AI assistant for a website called "Career Companion". Your goal is to answer user questions about the website's features. If the user asks to speak to a human, call customer care, or anything similar, you MUST respond with the exact phrase: "[CALL_CUSTOMER_CARE]". Do not add any other text. For all other questions, provide a helpful and concise answer. Here is the conversation history: ${JSON.stringify(chatbotHistory)}`;
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    let aiText = result.candidates[0].content.parts[0].text;
+
+                    chatbotMessages.removeChild(typingIndicator);
+
+                    if (aiText.includes('[CALL_CUSTOMER_CARE]')) {
+                        addChatMessage("Sure, connecting you to a customer care agent now...", 'ai');
+                    } else {
+                        addChatMessage(aiText, 'ai');
+                    }
+                    chatbotHistory.push({ role: 'model', parts: [{ text: aiText }] });
+
+                } catch (error) {
+                    console.error("Chatbot Error:", error);
+                    chatbotMessages.removeChild(typingIndicator);
+                    addChatMessage("Sorry, I'm having trouble connecting. Please try again later.", 'ai');
+                }
+
+                chatbotInput.disabled = false;
+                chatbotInput.focus();
+            };
+
+            if (chatbotSendBtn) chatbotSendBtn.onclick = handleChatSend;
+            if (chatbotInput) chatbotInput.onkeypress = (e) => { if(e.key === 'Enter') handleChatSend(); };
+
+
+            // --- THEME TOGGLE ---
+            const sunIcon = `<svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+            const moonIcon = `<svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`;
+            const applyTheme = (theme) => { if (theme === 'dark') { document.documentElement.classList.add('dark'); themeToggleButton.innerHTML = sunIcon; authThemeToggleButton.innerHTML = sunIcon; } else { document.documentElement.classList.remove('dark'); themeToggleButton.innerHTML = moonIcon; authThemeToggleButton.innerHTML = moonIcon; } };
+            themeToggleButton.addEventListener('click', () => { const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); });
+            authThemeToggleButton.addEventListener('click', () => { const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); });
+            
+            // --- GAMIFICATION ---
+            const awardBadge = (badgeName) => {
+                if (!userProfile.badges) {
+                    userProfile.badges = [];
+                }
+                if (!userProfile.badges.includes(badgeName)) {
+                    userProfile.badges.push(badgeName);
+                    const loggedInUser = getLoggedInUser();
+                    loggedInUser.profile = userProfile;
+                    const users = getUsers();
+                    const userIndex = users.findIndex(u => u.email === loggedInUser.email);
+                    users[userIndex] = loggedInUser;
+                    saveUsers(users);
+                    setLoggedInUser(loggedInUser);
+                }
+            };
+            
+            // --- PDF EXPORT ---
+            const exportRoadmapToPDF = async (pathData, pathId) => {
+                try {
+                    // Show loading state
+                    const shareBtn = document.getElementById('share-roadmap-btn');
+                    const originalText = shareBtn.innerHTML;
+                    shareBtn.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Generating PDF...';
+                    shareBtn.disabled = true;
+
+                    // Create a temporary container for PDF content
+                    const pdfContainer = document.createElement('div');
+                    pdfContainer.style.cssText = `
+                        position: absolute;
+                        left: -9999px;
+                        top: 0;
+                        width: 800px;
+                        background: white;
+                        color: #333;
+                        font-family: 'Inter', sans-serif;
+                        padding: 40px;
+                        line-height: 1.6;
+                    `;
+
+                    // Generate PDF content
+                    const currentDate = new Date().toLocaleDateString();
+                    const userName = userProfile.name || 'User';
+                    
+                    pdfContainer.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid #6c7093; padding-bottom: 20px;">
+                            <h1 style="color: #4a4e68; font-size: 32px; margin-bottom: 10px; font-weight: bold;">Career Companion</h1>
+                            <h2 style="color: #6c7093; font-size: 24px; margin-bottom: 5px;">${pathData.pathName} Roadmap</h2>
+                            <p style="color: #6c7093; font-size: 14px;">Generated for ${userName} on ${currentDate}</p>
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #4a4e68; font-size: 20px; margin-bottom: 15px; font-weight: bold;">Career Path Description</h3>
+                            <p style="color: #333; font-size: 16px; margin-bottom: 20px;">${pathData.description}</p>
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #4a4e68; font-size: 20px; margin-bottom: 15px; font-weight: bold;">Core Curriculum</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                ${pathData.requiredSkills.map((skill, index) => {
+                                    const hasSkill = userProfile.skills.some(s => s.toLowerCase() === skill.toLowerCase());
+                                    return `
+                                        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: ${hasSkill ? '#f0f9ff' : '#fef2f2'};">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="font-weight: 500; color: ${hasSkill ? '#1e40af' : '#dc2626'}; font-size: 14px;">${skill}</span>
+                                                <span style="font-size: 12px; padding: 4px 8px; border-radius: 12px; background: ${hasSkill ? '#dbeafe' : '#fee2e2'}; color: ${hasSkill ? '#1e40af' : '#dc2626'}; font-weight: 500;">
+                                                    ${hasSkill ? '✓ Acquired' : '○ Skill Gap'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #4a4e68; font-size: 20px; margin-bottom: 15px; font-weight: bold;">Project Suggestions</h3>
+                            ${pathData.suggestedProjects.map((project, index) => `
+                                <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 15px; background: #f9fafb;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <h4 style="font-weight: bold; color: #4a4e68; font-size: 16px;">${project.title}</h4>
+                                        <span style="font-size: 12px; padding: 4px 8px; border-radius: 12px; background: #e5e7eb; color: #374151; font-weight: 500;">${project.difficulty}</span>
+                                    </div>
+                                    <div style="color: #6b7280; font-size: 14px;">
+                                        <strong>Hints:</strong>
+                                        <ol style="margin-top: 8px; padding-left: 20px;">
+                                            ${project.hints.map(hint => `<li style="margin-bottom: 5px;">${hint}</li>`).join('')}
+                                        </ol>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #4a4e68; font-size: 20px; margin-bottom: 15px; font-weight: bold;">Learning Resources</h3>
+                            ${pathData.resources.map((resource, index) => {
+                                const isCompleted = userProfile.completedLessons.includes(resource.id);
+                                return `
+                                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: ${isCompleted ? '#f0fdf4' : '#f9fafb'};">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <h4 style="font-weight: bold; color: #4a4e68; font-size: 14px; margin-bottom: 5px;">${resource.title}</h4>
+                                                <p style="color: #6c7093; font-size: 12px;">Learns: ${resource.learnsSkill}</p>
+                                            </div>
+                                            <span style="font-size: 12px; padding: 4px 8px; border-radius: 12px; background: ${isCompleted ? '#dcfce7' : '#e5e7eb'}; color: ${isCompleted ? '#166534' : '#374151'}; font-weight: 500;">
+                                                ${isCompleted ? '✓ Completed' : '○ Pending'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        ${pathData.companyStacks && pathData.companyStacks.length > 0 ? `
+                            <div style="margin-bottom: 30px;">
+                                <h3 style="color: #4a4e68; font-size: 20px; margin-bottom: 15px; font-weight: bold;">Top Company Stacks</h3>
+                                ${pathData.companyStacks.map((company, index) => `
+                                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9fafb;">
+                                        <h4 style="font-weight: bold; color: #4a4e68; font-size: 14px; margin-bottom: 8px;">${company.name}</h4>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                            ${company.stack.map(tech => `
+                                                <span style="font-size: 11px; padding: 3px 6px; border-radius: 8px; background: #e5e7eb; color: #374151;">${tech}</span>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #6c7093; text-align: center; color: #6c7093; font-size: 12px;">
+                            <p>Generated by Career Companion - Your AI-powered career development platform</p>
+                            <p>Visit us at: <a href="https://career-companion.com" style="color: #6c7093;">career-companion.com</a></p>
+                        </div>
+                    `;
+
+                    // Add to document temporarily
+                    document.body.appendChild(pdfContainer);
+
+                    // Convert to canvas
+                    const canvas = await html2canvas(pdfContainer, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff'
+                    });
+
+                    // Remove temporary container
+                    document.body.removeChild(pdfContainer);
+
+                    // Create PDF
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 295; // A4 height in mm
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // Add first page
+                    pdf.addImage(canvas, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    // Add additional pages if needed
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(canvas, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+
+                    // Download PDF
+                    const fileName = `${pathData.pathName.replace(/[^a-zA-Z0-9]/g, '_')}_Roadmap_${currentDate.replace(/\//g, '-')}.pdf`;
+                    pdf.save(fileName);
+
+                    // Award badge for first PDF export
+                    if (!userProfile.badges.includes('PDF Exporter')) {
+                        awardBadge('PDF Exporter');
+                    }
+
+                    // Reset button
+                    shareBtn.innerHTML = originalText;
+                    shareBtn.disabled = false;
+
+                } catch (error) {
+                    console.error('PDF Export Error:', error);
+                    alert('Failed to generate PDF. Please try again.');
+                    
+                    // Reset button on error
+                    const shareBtn = document.getElementById('share-roadmap-btn');
+                    shareBtn.innerHTML = originalText;
+                    shareBtn.disabled = false;
+                }
+            };
+
+            // --- DEMO MODAL ---
+            const showDemoModal = () => {
+                demoModalBody.innerHTML = `<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/d5cf10f893f94fed96f8933bbf435151?sid=81c2c4fb-8acf-4da1-9903-262377a2ec71" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>`;
+                demoVideoModal.style.display = 'flex';
+            };
+            watchDemoButton.addEventListener('click', showDemoModal);
+            authWatchDemoButton.addEventListener('click', showDemoModal);
+            demoModalCloseBtn.addEventListener('click', () => {
+                demoVideoModal.style.display = 'none';
+                demoModalBody.innerHTML = '';
+            });
+
+            // --- APP INITIALIZATION ---
+            const checkLoginState = () => {
+                const loggedInUser = getLoggedInUser();
+                if (loggedInUser) {
+                    userProfile = loggedInUser.profile;
+                    if (userProfile) { 
+                        if (!userProfile.badges) userProfile.badges = [];
+                        if (!userProfile.aiRoadmaps) userProfile.aiRoadmaps = [];
+                        initMainContent(); 
+                        showPage('main'); 
+                    } 
+                    else { userProfile = { name: '', interests: [], skills: [], completedLessons: [], badges: [], aiRoadmaps: [] }; initOnboarding(); showPage('onboarding'); }
+                } else { showPage('auth'); }
+            };
+            
+            applyTheme(localStorage.getItem('theme') || 'light');
+            checkLoginState();
+        });
+    </script>
+</body>
+</html>
