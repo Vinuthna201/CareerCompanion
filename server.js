@@ -4,12 +4,14 @@ const fetch = require('node-fetch');
 const path = require('path');
 
 // Load configuration
-let config;
-try {
-    config = require('./config.js');
-} catch (error) {
-    console.error('Error: config.js not found. Please copy config.example.js to config.js and add your API keys.');
-    process.exit(1);
+let GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+  try {
+    const config = require('./config.js');
+    GEMINI_API_KEY = config.GEMINI_API_KEY;
+  } catch (e) {
+    console.warn('No config.js found and GEMINI_API_KEY not set in environment.');
+  }
 }
 
 const app = express();
@@ -27,7 +29,7 @@ app.post('/api/generate-roadmap', async (req, res) => {
         
         console.log('Generating roadmap for prompt:', prompt);
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${config.GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -64,7 +66,7 @@ app.post('/api/chat', async (req, res) => {
     try {
         const { contents } = req.body;
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${config.GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
