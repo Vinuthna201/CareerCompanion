@@ -4,14 +4,14 @@ An AI-powered career development platform that helps users explore career paths,
 
 ## Features
 
-- 🤖 **AI-Powered Career Roadmaps**: Generate personalized career paths using Google Gemini AI
-- 📚 **Interactive Learning**: Video tutorials and project-based learning
-- 🎯 **Skill Tracking**: Monitor your progress and acquired skills
-- 💼 **Mock Interviews**: Practice with AI-powered interview simulations
-- 🏆 **Gamification**: Earn badges and track achievements
-- 📄 **PDF Export**: Share your roadmap as a professional PDF document
-- 🌙 **Dark/Light Theme**: Customizable user interface
-- 📱 **Responsive Design**: Works on desktop and mobile devices
+-  **AI-Powered Career Roadmaps**: Generate personalized career paths using Google Gemini AI
+-  **Interactive Learning**: Video tutorials and project-based learning
+-  **Skill Tracking**: Monitor your progress and acquired skills
+-  **Mock Interviews**: Practice with AI-powered interview simulations
+-  **Gamification**: Earn badges and track achievements
+-  **PDF Export**: Share your roadmap as a professional PDF document
+-  **Dark/Light Theme**: Customizable user interface
+-  **Responsive Design**: Works on desktop and mobile devices
 
 ### PDF Export Feature
 
@@ -31,10 +31,10 @@ Users can access this feature by clicking the "Share My Roadmap" button on any r
 
 This project implements secure API key management:
 
-- ✅ API keys are stored server-side only
-- ✅ Frontend never exposes sensitive credentials
-- ✅ All API calls are proxied through a secure backend
-- ✅ Configuration files are gitignored
+-  API keys are stored server-side only
+-  Frontend never exposes sensitive credentials
+-  All API calls are proxied through a secure backend
+-  Configuration files are gitignored
 
 ## Setup Instructions
 
